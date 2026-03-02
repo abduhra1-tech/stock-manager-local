@@ -61,7 +61,7 @@ export function FAQ() {
             Still have questions?{" "}
             <a
               href="#"
-              className="text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
+              className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
             >
               Contact our support team
             </a>

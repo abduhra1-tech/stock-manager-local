@@ -6,8 +6,8 @@ interface TrustBadgesProps {
 }
 
 export function TrustBadges({ items, variant = "dark" }: TrustBadgesProps) {
-  const textColor = variant === "light" ? "text-indigo-200" : "text-gray-500";
-  const iconColor = variant === "light" ? "text-indigo-200" : "text-green-500";
+  const textColor = variant === "light" ? "text-blue-200" : "text-gray-500";
+  const iconColor = variant === "light" ? "text-blue-200" : "text-green-500";
 
   return (
     <div

@@ -20,8 +20,8 @@ export function Features() {
             const Icon = getIcon(feature.icon);
             return (
               <Card key={feature.title} hover>
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
-                  <Icon className="w-6 h-6 text-indigo-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                  <Icon className="w-6 h-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {feature.title}

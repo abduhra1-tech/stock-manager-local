@@ -6,9 +6,9 @@ import { siteConfig, trustIndicators } from "@/lib/constants";
 
 export function CTA() {
   return (
-    <section className="py-24 bg-indigo-600">
+    <section className="py-24 bg-blue-600">
       <Container>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-12 md:p-16">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 to-cyan-600 p-12 md:p-16">
           {/* Background decoration */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
@@ -20,7 +20,7 @@ export function CTA() {
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Ready to launch your startup?
             </h2>
-            <p className="text-xl text-indigo-100 mb-10">
+            <p className="text-xl text-blue-100 mb-10">
               Join thousands of founders who are building faster with{" "}
               {siteConfig.name}. Start your free trial today — no credit card
               required.
