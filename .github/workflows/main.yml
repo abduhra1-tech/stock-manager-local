@@ -2,26 +2,7 @@ name: Raseed Build
 on:
   push:
     branches: [ main ]
-
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-latest, windows-latest]
-
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install Dependenciname: Raseed Build
-on:
-  push:
+  pull_request:
     branches: [ main ]
 
 jobs:
@@ -32,40 +13,39 @@ jobs:
         platform: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.platform }}
+    
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
+      
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      
+      - name: Install Frontend Dependencies
+        working-directory: ./stockbase
+        run: npm ci
+      
       - name: Build Tauri App
         working-directory: ./stockbase
-        run: |
-          npm install
-          npm run tauri build
+        run: npm run tauri build
+      
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Raseed-${{ matrix.platform }}
-          path: stockbase/src-tauri/target/release/bundle/**/*es (Ubuntu)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      - name: Build Tauri App
-        working-directory: ./stockbase
-        run: |
-          npm install
-          npm run tauri build
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Raseed-${{ matrix.platform }}
-          path: stockbase/src-tauri/target/release/bundle/**/*
+          path: |
+            stockbase/src-tauri/target/release/bundle/**/*
