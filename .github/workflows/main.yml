@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: stockbase/package-lock.json
       
       - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@b77811588832572b01f9fe2e3303ad39d066338a
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
       
