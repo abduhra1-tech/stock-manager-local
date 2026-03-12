@@ -1,10 +1,7 @@
-cat > .github/workflows/main.yml << 'EOF'
 name: Raseed Build
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
@@ -12,33 +9,40 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
+
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
         with:
           node-version: 20
-
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
+      
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
+        uses: actions-rust-lang/setup-rust-toolchain@e12eda571dc9a5ee5d58eecf5ba2bbfb85e8f229
+        with:
+          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Install Dependencies & Build
-        run: |
-          npm install
-          npm run tauri build
-
+      
+      - name: Install Frontend Dependencies
+        working-directory: ./stockbase
+        run: npm ci
+      
+      - name: Build Tauri App
+        working-directory: ./stockbase
+        run: npm run tauri build
+      
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: Raseed-${{ matrix.platform }}
           path: |
-            src-tauri/target/release/bundle/**/*
-EOF
+            stockbase/src-tauri/target/release/bundle/**/*
