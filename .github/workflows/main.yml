@@ -1,11 +1,10 @@
-# Update the workflow file
-cat > .github/workflows/build.yml << 'EOF'
+cat > .github/workflows/main.yml << 'EOF'
 name: Raseed Build
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -13,25 +12,29 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Install Dependencies & Build
         run: |
           npm install
           npm run tauri build
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -39,8 +42,3 @@ jobs:
           path: |
             src-tauri/target/release/bundle/**/*
 EOF
-
-# Commit and push
-git add .github/workflows/build.yml
-git commit -m "fix: update rust-toolchain action to use stable tag"
-git push origin main
