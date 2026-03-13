@@ -12,31 +12,35 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      
+
       - name: Setup Node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
-      
+
+      - name: Install Rust (using rustup)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Add Rust target (for cross-compilation)
+        run: rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      
+
       - name: Build Tauri App
         working-directory: ./stockbase
         run: |
           npm install
           npm run tauri build
-      
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
