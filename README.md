@@ -23,3 +23,4 @@ A desktop inventory management app built with Tauri + React + TypeScript.
 bun install
 bun run tauri dev
 # trigger tauri build
+# fresh build with complete workflow
