@@ -17,9 +17,11 @@ jobs:
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
       
       - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
+        uses: actions-rust-lang/setup-rust-toolchain@a0b538f5b34b9139b656aa4c0f8b0b7b8f8b8f8b8
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
       
