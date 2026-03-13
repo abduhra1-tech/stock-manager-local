@@ -24,3 +24,4 @@ bun install
 bun run tauri dev
 # trigger tauri build
 # fresh build with complete workflow
+# trigger build with new workflow
