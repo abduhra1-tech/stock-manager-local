@@ -22,3 +22,4 @@ A desktop inventory management app built with Tauri + React + TypeScript.
 ```bash
 bun install
 bun run tauri dev
+# trigger tauri build
