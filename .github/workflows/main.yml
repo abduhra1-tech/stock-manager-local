@@ -2,8 +2,6 @@ name: Raseed Build
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -19,11 +17,9 @@ jobs:
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: stockbase/package-lock.json
       
       - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b77811588832572b01f9fe2e3303ad39d066338a
+        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
       
@@ -33,17 +29,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       
-      - name: Install Frontend Dependencies
-        working-directory: ./stockbase
-        run: npm ci
-      
       - name: Build Tauri App
         working-directory: ./stockbase
-        run: npm run tauri build
+        run: |
+          npm install
+          npm run tauri build
       
       - name: Upload Artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: Raseed-${{ matrix.platform }}
-          path: |
-            stockbase/src-tauri/target/release/bundle/**/*
+          path: stockbase/src-tauri/target/release/bundle/**/*
