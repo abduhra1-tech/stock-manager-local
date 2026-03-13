@@ -20,10 +20,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
       
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@a0b538f5b34b9139b656aa4c0f8b0b7b8f8b8f8b8
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70
         with:
-          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
       
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
