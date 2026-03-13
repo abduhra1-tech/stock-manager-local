@@ -1,11 +1,8 @@
 name: Raseed Build
-name: Raseed Build
 # fresh start with complete workflow
 on:
   push:
-    branches: [main]on:
-  push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
@@ -50,6 +47,7 @@ jobs:
         with:
           name: Raseed-${{ matrix.platform }}
           path: stockbase/src-tauri/target/release/bundle/**/*
+      
       - name: Add Rust to PATH (Windows)
         if: matrix.platform == 'windows-latest'
         run: echo "C:\Users\runneradmin\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
