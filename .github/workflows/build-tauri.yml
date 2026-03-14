@@ -1,4 +1,5 @@
-name: Raseed Build
+# FINAL VERSION - with lock file generation
+name: Raseed Buildname: Raseed Build
 # fresh start with complete workflow
 on:
   push:
