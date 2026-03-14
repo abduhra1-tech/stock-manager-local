@@ -1,100 +1,32 @@
-# Delete old workflow
-rm -f .github/workflows/build-tauri.yml
-
-# Create clean file (copy the YAML above EXACTLY)
-cat > .github/workflows/build-tauri.yml << 'ENDOFFILE'
+# .github/workflows/build-tauri.yml
 name: Raseed Build
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
 
 jobs:
-  build:
-    name: Build ${{ matrix.platform }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
-    
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687
-
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687  # v4.2.2
       - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7  # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-
-      - name: Cache npm
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('stockbase/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Cache Cargo
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            stockbase/src-tauri/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
-        with:
-          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
-          components: clippy, rustfmt
-
-      - name: Linux Dependencies
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
-
-      - name: Install Dependencies
+      - name: Install Linux deps
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
+      - name: Install deps & build
         working-directory: ./stockbase
-        run: npm ci
-
-      - name: Build Frontend
-        working-directory: ./stockbase
-        run: npm run build
-
-      - name: Build Tauri
-        working-directory: ./stockbase
-        run: npm run tauri build -- --verbose
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+        run: npm ci && npm run tauri build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1  # v4.6.1
         with:
-          name: Raseed-${{ matrix.platform }}
-          path: |
-            stockbase/src-tauri/target/release/bundle/**/*
+          name: Raseed-linux
+          path: stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
-          if-no-files-found: warn
-ENDOFFILE
-
-# Verify no trailing spaces
-sed -i 's/[[:space:]]*$//' .github/workflows/build-tauri.yml
-
-# Commit and push
-git add .github/workflows/build-tauri.yml
-git commit -m "fix: clean GitHub Actions workflow (no trailing spaces in SHAs)"
-git push origin main
