@@ -2,23 +2,59 @@ name: Raseed Build
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687
-      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-      - run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
-      - working-directory: ./stockbase
-        run: npm ci && npm run tauri build
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libssl-dev
+
+      - name: Install dependencies
+        working-directory: ./stockbase
+        run: npm ci
+
+      - name: Build Tauri app
+        working-directory: ./stockbase
+        run: npm run tauri build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1
         with:
-          name: Raseed-linux
-          path: stockbase/src-tauri/target/release/bundle/**/*
+          name: Raseed-${{ matrix.platform }}
+          path: |
+            stockbase/src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
