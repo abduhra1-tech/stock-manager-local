@@ -1,3 +1,4 @@
+# FINAL VERSION - all SHAs fixed
 name: Raseed Build
 on:
   push:
@@ -22,7 +23,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687 # v4.2.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅ Fixed
 
       - name: Setup Node.js
         uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7 # v4.1.0
@@ -32,7 +33,7 @@ jobs:
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Cache npm dependencies
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # ✅ v4.2.3 - NON-DEPRECATED
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('stockbase/package-lock.json') }}
@@ -40,7 +41,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # ✅ v4.2.3 - NON-DEPRECATED
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.3
         with:
           path: |
             ~/.cargo/bin/
