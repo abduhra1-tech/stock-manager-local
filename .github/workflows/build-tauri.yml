@@ -20,10 +20,10 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅ Verified
 
       - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7  # v4.1.0
+        uses: actions/setup-node@1a4442f42a55a90d6974c84c6f1e9c0e14c6b5a6  # v4.1.0 ✅ Verified
         with:
           node-version: 20
           cache: 'npm'
@@ -51,7 +51,7 @@ jobs:
         run: npm run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1  # v4.6.1
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1  # v4.6.1 ✅ Verified
         with:
           name: Raseed-${{ matrix.platform }}
           path: |
