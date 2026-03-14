@@ -29,6 +29,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
+      - name: Generate package-lock.json
+        working-directory: ./stockbase
+        run: npm install --package-lock-only
+
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
