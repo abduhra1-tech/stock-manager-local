@@ -32,7 +32,7 @@ jobs:
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Cache npm dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # ✅ v4.2.3 - NON-DEPRECATED
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('stockbase/package-lock.json') }}
@@ -40,7 +40,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # ✅ v4.2.3 - NON-DEPRECATED
         with:
           path: |
             ~/.cargo/bin/
@@ -70,12 +70,6 @@ jobs:
             patchelf \
             pkg-config \
             libssl-dev
-
-      - name: Install Windows dependencies
-        if: matrix.platform == 'windows-latest'
-        run: |
-          # Windows has native MSVC toolchain, no additional deps needed for Tauri
-          echo "Windows build environment ready"
 
       - name: Install frontend dependencies
         working-directory: ./stockbase
