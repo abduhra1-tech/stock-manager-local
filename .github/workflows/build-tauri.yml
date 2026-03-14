@@ -1,4 +1,4 @@
-name: Raseed Build
+rm -f .github/workflows/build-tauri.ymlname: Raseed Build
 on:
   push:
     branches: [main]
