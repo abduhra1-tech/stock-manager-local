@@ -24,7 +24,7 @@ jobs:
         run: npm install --package-lock-only
 
       - name: Cache npm dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc09c97b6c2d4d6c6f4d4c6d6c6f4d4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('stockbase/package-lock.json') }}
