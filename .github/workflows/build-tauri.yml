@@ -29,6 +29,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
+      # --- NEW STEP: Generate the lock file BEFORE cache tries to use it ---
       - name: Generate package-lock.json
         working-directory: ./stockbase
         run: npm install --package-lock-only
