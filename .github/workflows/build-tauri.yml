@@ -4,29 +4,43 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   build:
+    name: Build ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
+    
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687  # v4.2.2
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af687 # v4.2.2
 
-      - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7  # v4.1.0
+      - name: Setup Node.js
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7 # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
-      - name: Cache Cargo
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2 ✅ Fixed
+      - name: Cache npm dependencies
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.3 ✅ Updated
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('stockbase/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.3 ✅ Updated
         with:
           path: |
             ~/.cargo/bin/
@@ -38,28 +52,42 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9  # v1
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9 # v1
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+          components: clippy, rustfmt
 
-      - name: Install Dependencies (Ubuntu)
+      - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libssl-dev
 
-      - name: Install Frontend Dependencies
+      - name: Install frontend dependencies
         working-directory: ./stockbase
         run: npm ci
 
-      - name: Build Tauri App
+      - name: Build frontend (Vite)
         working-directory: ./stockbase
-        run: npm run tauri build
+        run: npm run build
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1  # v4.6.1
+      - name: Build Tauri app
+        working-directory: ./stockbase
+        run: npm run tauri build -- --verbose
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: Raseed-${{ matrix.platform }}
           path: |
             stockbase/src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
