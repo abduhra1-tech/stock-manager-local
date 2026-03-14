@@ -21,6 +21,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
+      - name: Generate package-lock.json
+        working-directory: ./stockbase
+        run: npm install --package-lock-only
+
       - name: Install Rust (using rustup)
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
