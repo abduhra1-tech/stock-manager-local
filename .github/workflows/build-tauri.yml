@@ -1,3 +1,8 @@
+# Delete old workflow
+rm -f .github/workflows/build-tauri.yml
+
+# Create clean file (copy the YAML above EXACTLY)
+cat > .github/workflows/build-tauri.yml << 'ENDOFFILE'
 name: Raseed Build
 on:
   push:
@@ -84,3 +89,12 @@ jobs:
             stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
+ENDOFFILE
+
+# Verify no trailing spaces
+sed -i 's/[[:space:]]*$//' .github/workflows/build-tauri.yml
+
+# Commit and push
+git add .github/workflows/build-tauri.yml
+git commit -m "fix: clean GitHub Actions workflow (no trailing spaces in SHAs)"
+git push origin main
