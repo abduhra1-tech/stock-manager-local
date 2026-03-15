@@ -34,10 +34,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      - name: Install Rust (manual)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+        shell: bash
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
