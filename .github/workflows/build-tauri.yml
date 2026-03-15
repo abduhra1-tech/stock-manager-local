@@ -22,13 +22,13 @@ jobs:
         working-directory: ./stockbase
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅ Verified
 
       - name: Generate package-lock.json
         run: npm install --package-lock-only
 
       - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        uses: actions/setup-node@1a4442f42a55a90d6974c84c6f1e9c0e14c6b5a6  # v4.1.0 ✅ Verified
         with:
           node-version: 20
           cache: 'npm'
@@ -54,7 +54,7 @@ jobs:
         run: npm run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1 ✅ Verified
         with:
           name: Raseed-${{ matrix.platform }}
           path: |
