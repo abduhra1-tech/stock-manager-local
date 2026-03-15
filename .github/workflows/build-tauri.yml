@@ -17,39 +17,26 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: stockbase  # All steps run in stockbase/
+        shell: bash  # Use bash for cross-platform consistency
     
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
-      # 🔍 DEBUG: List all files at root
-      - name: Debug - List root directory
-        run: ls -la
-        shell: bash
-
-      # 🔍 DEBUG: Find stockbase folder
-      - name: Debug - Find stockbase
+      # Optional: Debug step (remove after testing)
+      - name: Debug - Verify directory
         run: |
-          echo "Current directory: $(pwd)"
-          echo "=== Looking for stockbase ==="
-          find . -name "stockbase" -type d 2>/dev/null || echo "No stockbase folder found"
-          echo "=== Listing all directories ==="
-          ls -la */ 2>/dev/null || echo "No subdirectories"
-        shell: bash
+          echo "PWD: $(pwd)"
+          ls -la
+          echo "=== package.json check ==="
+          test -f package.json && echo "✓ package.json found" || echo "✗ package.json NOT found"
         continue-on-error: true
 
-      # Try to generate lock file with full path if needed
       - name: Generate package-lock.json
-        run: |
-          if [ -d "stockbase" ]; then
-            cd stockbase && npm install --package-lock-only
-          elif [ -d "./stockbase" ]; then
-            cd ./stockbase && npm install --package-lock-only
-          else
-            echo "❌ Cannot find stockbase folder!"
-            exit 1
-          fi
-        shell: bash
+        run: npm install --package-lock-only
 
       - name: Setup Node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
@@ -58,41 +45,27 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
-      - name: Install Rust (manual)
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
-        shell: bash
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
+        with:
+          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            pkg-config \
-            libssl-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
       - name: Install dependencies
-        run: |
-          cd stockbase && npm ci
-        shell: bash
+        run: npm ci
 
       - name: Build Tauri app
-        run: |
-          cd stockbase && npm run tauri build
-        shell: bash
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: Raseed-${{ matrix.platform }}
-          path: |
-            stockbase/src-tauri/target/release/bundle/**/*
+          path: stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
