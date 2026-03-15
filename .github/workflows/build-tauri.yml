@@ -23,17 +23,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
 
+      # ✅ MOVED: Generate lock file BEFORE Setup Node cache
+      - name: Generate package-lock.json
+        working-directory: ./stockbase
+        run: npm install --package-lock-only
+
+      # ✅ NOW: Setup Node with cache - lock file exists!
       - name: Setup Node
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-
-      # --- NEW STEP: Generate the lock file BEFORE cache tries to use it ---
-      - name: Generate package-lock.json
-        working-directory: ./stockbase
-        run: npm install --package-lock-only
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
