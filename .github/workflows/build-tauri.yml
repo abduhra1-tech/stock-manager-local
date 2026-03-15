@@ -1,5 +1,5 @@
 # FINAL VERSION - with lock file generation
-name: Raseed Buildname: Raseed Build
+name: Raseed Build
 on:
   push:
     branches: [main]
