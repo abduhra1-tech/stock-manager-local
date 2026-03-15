@@ -1,4 +1,4 @@
-# FINAL VERSION - with lock file generation
+# FINAL VERSION - with lock file generation and fixed paths
 name: Raseed Build
 on:
   push:
@@ -23,12 +23,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
 
-      # ✅ MOVED: Generate lock file BEFORE Setup Node cache
+      # ✅ Generate lock file BEFORE Setup Node cache - FIXED PATH
       - name: Generate package-lock.json
-        working-directory: ./stockbase
+        working-directory: stockbase
         run: npm install --package-lock-only
+        shell: bash
 
-      # ✅ NOW: Setup Node with cache - lock file exists!
+      # ✅ Setup Node with cache - lock file now exists!
       - name: Setup Node
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
         with:
@@ -50,12 +51,14 @@ jobs:
             libssl-dev
 
       - name: Install dependencies
-        working-directory: ./stockbase
+        working-directory: stockbase
         run: npm ci
+        shell: bash
 
       - name: Build Tauri app
-        working-directory: ./stockbase
+        working-directory: stockbase
         run: npm run tauri build
+        shell: bash
 
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1
