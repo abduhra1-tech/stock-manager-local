@@ -1,0 +1,20 @@
+name: Debug - Find stockbase
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      
+      - name: List ALL files
+        run: |
+          echo "=== CURRENT DIRECTORY ==="
+          pwd
+          echo "=== ALL FILES ==="
+          ls -la -R
+        shell: bash
+        continue-on-error: true
