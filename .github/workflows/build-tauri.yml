@@ -15,11 +15,20 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
-    defaults:
-      run:
-        working-directory: stockbase  # ← FIXED: removed ./
+    
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      
+      # 🔍 DEBUG: See what files exist
+      - name: Debug - List files
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "=== Files at root ==="
+          ls -la
+          echo "=== Looking for stockbase ==="
+          find . -name "stockbase" -type d 2>/dev/null || echo "❌ stockbase not found"
+        shell: bash
+        continue-on-error: true
       
       - name: Setup Node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
@@ -32,6 +41,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
         shell: bash
+        working-directory: .  # Run at root, not in stockbase
       
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
@@ -47,10 +57,14 @@ jobs:
             libssl-dev
       
       - name: Install dependencies
+        working-directory: ./stockbase
         run: npm ci
+        shell: bash
       
       - name: Build Tauri app
+        working-directory: ./stockbase
         run: npm run tauri build
+        shell: bash
       
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
