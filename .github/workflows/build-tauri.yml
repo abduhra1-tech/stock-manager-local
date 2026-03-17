@@ -1,4 +1,6 @@
+# .github/workflows/build-tauri.yml
 name: Raseed Build
+
 on:
   push:
     branches: [main]
@@ -7,7 +9,9 @@ on:
   workflow_dispatch:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ✅ Added
 
 jobs:
   build:
@@ -15,33 +19,91 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
+
     runs-on: ${{ matrix.platform }}
+
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
-      
-      - name: Setup Node
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+
+      - name: Debug - List repository structure
+        run: |
+          echo "=== Repository Root ==="
+          ls -la
+          echo "=== stockbase Directory ==="
+          ls -la stockbase/ 2>/dev/null || echo "stockbase/ not found"
+          echo "=== .github/workflows ==="
+          ls -la .github/workflows/
+
+      - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.1.0
         with:
-          node-version: 20
-      
-      - name: Install Rust
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'stockbase/package-lock.json'
+
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70  # stable
-      
-      - name: Install Dependencies (Ubuntu)
+        with:
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+
+      - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      
-      - name: Install Dependencies & Build
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - name: Install Windows dependencies
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Windows dependencies ready"
+
+      - name: Install frontend dependencies
+        working-directory: stockbase  # ← FIXED: removed ./
+        run: npm ci
+
+      - name: Debug - Verify stockbase structure before build
         working-directory: stockbase  # ← FIXED: removed ./
         run: |
-          npm install
-          npm run tauri build
-      
-      - name: Upload Artifacts
+          echo "=== stockbase/src-tauri ==="
+          ls -la src-tauri/
+          echo "=== Cargo.toml ==="
+          cat src-tauri/Cargo.toml | head -30
+
+      - name: Build Tauri application
+        working-directory: stockbase  # ← FIXED: removed ./
+        run: npm run tauri build -- --verbose
+
+      - name: Debug - List build artifacts
+        if: always()
+        working-directory: stockbase  # ← FIXED: removed ./
+        run: |
+          echo "=== Build output directory ==="
+          find src-tauri/target -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" 2>/dev/null | head -20
+          echo "=== Bundle directory ==="
+          ls -la src-tauri/target/release/bundle/ 2>/dev/null || echo "Bundle dir not found"
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1
         with:
-          name: Raseed-${{ matrix.platform }}
+          name: raseed-${{ matrix.platform }}-${{ github.sha }}
           path: |
             stockbase/src-tauri/target/release/bundle/**/*
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload debug logs
+        if: failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: raseed-${{ matrix.platform }}-debug-logs-${{ github.sha }}
+          path: |
+            stockbase/src-tauri/target/debug/build/**/output
+            stockbase/npm-debug.log*
+          retention-days: 3
