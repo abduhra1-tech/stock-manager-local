@@ -11,7 +11,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ✅ Added
 
 jobs:
   build:
@@ -21,31 +20,36 @@ jobs:
         platform: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: stockbase  # ← FIXED: removed ./
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+        uses: actions/checkout@v4
 
-      - name: Debug - List repository structure
+      - name: Debug - Repository structure
         run: |
-          echo "=== Repository Root ==="
-          ls -la
-          echo "=== stockbase Directory ==="
-          ls -la stockbase/ 2>/dev/null || echo "stockbase/ not found"
-          echo "=== .github/workflows ==="
-          ls -la .github/workflows/
+          echo "=== Root ===" && ls -la
+          echo "=== stockbase/ ===" && ls -la stockbase/ 2>/dev/null || echo "⚠️ stockbase/ not found"
+          echo "=== .github/workflows ===" && ls -la .github/workflows/
 
       - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.1.0
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'stockbase/package-lock.json'
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70  # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './stockbase/src-tauri -> target'
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
@@ -57,40 +61,28 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            pkg-config
+            pkg-config \
+            libssl-dev
 
-      - name: Install Windows dependencies
-        if: matrix.platform == 'windows-latest'
-        run: |
-          echo "Windows dependencies ready"
-
-      - name: Install frontend dependencies
-        working-directory: stockbase  # ← FIXED: removed ./
+      - name: Install dependencies
         run: npm ci
 
-      - name: Debug - Verify stockbase structure before build
-        working-directory: stockbase  # ← FIXED: removed ./
+      - name: Debug - Verify before build
         run: |
-          echo "=== stockbase/src-tauri ==="
-          ls -la src-tauri/
-          echo "=== Cargo.toml ==="
-          cat src-tauri/Cargo.toml | head -30
+          echo "=== stockbase/src-tauri ===" && ls -la src-tauri/
+          echo "=== Cargo.toml ===" && head -20 src-tauri/Cargo.toml
 
-      - name: Build Tauri application
-        working-directory: stockbase  # ← FIXED: removed ./
+      - name: Build Tauri app
         run: npm run tauri build -- --verbose
 
-      - name: Debug - List build artifacts
+      - name: Debug - List artifacts
         if: always()
-        working-directory: stockbase  # ← FIXED: removed ./
         run: |
-          echo "=== Build output directory ==="
-          find src-tauri/target -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" 2>/dev/null | head -20
-          echo "=== Bundle directory ==="
-          ls -la src-tauri/target/release/bundle/ 2>/dev/null || echo "Bundle dir not found"
+          echo "=== Bundle output ==="
+          find src-tauri/target/release/bundle -type f 2>/dev/null | head -20 || echo "⚠️ No bundle found"
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: raseed-${{ matrix.platform }}-${{ github.sha }}
           path: |
@@ -98,12 +90,12 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Upload debug logs
+      - name: Upload debug logs (on failure)
         if: failure()
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        uses: actions/upload-artifact@v4
         with:
-          name: raseed-${{ matrix.platform }}-debug-logs-${{ github.sha }}
+          name: build-logs-${{ matrix.platform }}-${{ github.sha }}
           path: |
-            stockbase/src-tauri/target/debug/build/**/output
+            stockbase/src-tauri/target/**/output
             stockbase/npm-debug.log*
           retention-days: 3
