@@ -23,30 +23,36 @@ jobs:
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
-        working-directory: stockbase  # ← FIXED: removed ./
+        working-directory: stockbase  # ← NO ./
 
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.1.0
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
+        with:
+          node-version: '20'
+
+      # ✅ Generate package-lock.json first
+      - name: Generate package-lock.json
+        run: npm install --package-lock-only
+        shell: bash
+
+      # ✅ NOW setup Node with cache (lock file exists)
+      - name: Setup Node.js with cache
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'package-lock.json'
 
-      # ✅ Generate package-lock.json if it doesn't exist
-      - name: Generate package-lock.json (if needed)
+      # ✅ MANUAL RUST INSTALLATION - NO SHA ISSUES EVER!
+      - name: Install Rust (manual)
         run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only
-          fi
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
         shell: bash
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70  # stable
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
@@ -63,7 +69,7 @@ jobs:
         run: npm run tauri build -- --verbose
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: raseed-${{ matrix.platform }}-${{ github.sha }}
           path: |
