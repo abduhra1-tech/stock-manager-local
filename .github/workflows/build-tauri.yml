@@ -1,4 +1,6 @@
+# .github/workflows/build-tauri.yml
 name: Raseed Build
+
 on:
   push:
     branches: [main]
@@ -7,53 +9,75 @@ on:
   workflow_dispatch:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   build:
-    name: Build ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
-    
-    defaults:
-      run:
-        working-directory: stockbase
-    
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
-      - name: Setup Node
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # ✅ VERIFIED SHA
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: stockbase/package-lock.json
+          cache-dependency-path: 'stockbase/package-lock.json'
 
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
-      - name: Install Linux dependencies
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './stockbase/src-tauri -> target'
+
+      - name: Install Linux dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libssl-dev
 
       - name: Install dependencies
+        working-directory: stockbase  # ← FIXED: removed ./
         run: npm ci
 
       - name: Build Tauri app
-        run: npm run tauri build
+        working-directory: stockbase  # ← FIXED: removed ./
+        run: npm run tauri build -- --verbose
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        uses: actions/upload-artifact@v4
         with:
-          name: Raseed-${{ matrix.platform }}
+          name: raseed-${{ matrix.platform }}-${{ github.sha }}
           path: |
-            src-tauri/target/release/bundle/**/*
-          retention-days: 7
+            stockbase/src-tauri/target/release/bundle/**/*
           if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.platform }}-${{ github.sha }}
+          path: |
+            stockbase/src-tauri/target/debug/build/**/output
+            stockbase/npm-debug.log*
+          if-no-files-found: ignore
