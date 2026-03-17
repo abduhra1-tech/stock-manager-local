@@ -11,7 +11,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Handles Node.js deprecation
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ← Added for Node.js deprecation
 
 jobs:
   build:
@@ -19,21 +19,13 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
-        working-directory: stockbase
+        working-directory: stockbase  # ← FIXED: removed ./
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅
-
-      - name: Debug - Repository structure
-        run: |
-          echo "=== Root ===" && ls -la
-          echo "=== stockbase/ ===" && ls -la stockbase/ 2>/dev/null || echo "⚠️ stockbase/ not found"
-          echo "=== .github/workflows ===" && ls -la .github/workflows/
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅
 
       - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.1.0 ✅
@@ -42,15 +34,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'stockbase/package-lock.json'
 
-      - name: Install Rust toolchain
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70  # stable ✅
         with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
-
-      - name: Rust cache
-        uses: Swatinem/rust-cache@9d47c6ad7b6416aef32e95b45db64d1c5e9773ed  # v2.7.8 ✅
-        with:
-          workspaces: './stockbase/src-tauri -> target'
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
@@ -62,25 +49,13 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            pkg-config \
-            libssl-dev
+            pkg-config
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Debug - Verify before build
-        run: |
-          echo "=== stockbase/src-tauri ===" && ls -la src-tauri/
-          echo "=== Cargo.toml ===" && head -20 src-tauri/Cargo.toml
-
       - name: Build Tauri app
         run: npm run tauri build -- --verbose
-
-      - name: Debug - List artifacts
-        if: always()
-        run: |
-          echo "=== Bundle output ==="
-          find src-tauri/target/release/bundle -type f 2>/dev/null | head -20 || echo "⚠️ No bundle found"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.1 ✅
@@ -90,13 +65,3 @@ jobs:
             stockbase/src-tauri/target/release/bundle/**/*
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Upload debug logs (on failure)
-        if: failure()
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
-        with:
-          name: build-logs-${{ matrix.platform }}-${{ github.sha }}
-          path: |
-            stockbase/src-tauri/target/**/output
-            stockbase/npm-debug.log*
-          retention-days: 3
