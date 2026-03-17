@@ -11,7 +11,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ← Added for Node.js deprecation
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
-        working-directory: stockbase  # ← FIXED: removed ./
+        working-directory: stockbase  # ← No ./
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2 ✅
@@ -34,10 +34,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'stockbase/package-lock.json'
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@4392534d4a97fa7d25c9502201055d6ad67e7c70  # stable ✅
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      # ✅ MANUAL RUST INSTALLATION - NO SHA ISSUES EVER!
+      - name: Install Rust (manual)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+        shell: bash
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
