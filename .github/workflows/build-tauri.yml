@@ -23,30 +23,24 @@ jobs:
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
-        working-directory: stockbase  # ← NO ./
+        working-directory: stockbase
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
+      # ✅ Setup Node WITHOUT cache (temporarily)
       - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: '20'
+          # NO CACHE HERE
 
-      # ✅ Generate package-lock.json first
+      # ✅ Generate package-lock.json
       - name: Generate package-lock.json
         run: npm install --package-lock-only
         shell: bash
 
-      # ✅ NOW setup Node with cache (lock file exists)
-      - name: Setup Node.js with cache
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-
-      # ✅ MANUAL RUST INSTALLATION - NO SHA ISSUES EVER!
+      # ✅ Install Rust manually
       - name: Install Rust (manual)
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
