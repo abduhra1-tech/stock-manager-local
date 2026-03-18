@@ -1,20 +1,63 @@
-name: Debug - Find stockbase
+cat > .github/workflows/build.yml << 'EOF'
+name: Raseed Build
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  debug:
-    runs-on: windows-latest
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: ./stockbase
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      
-      - name: List ALL files
+
+      - name: Setup Node
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
+        with:
+          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
         run: |
-          echo "=== CURRENT DIRECTORY ==="
-          pwd
-          echo "=== ALL FILES ==="
-          ls -la -R
-        shell: bash
-        continue-on-error: true
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: Raseed-${{ matrix.platform }}
+          path: stockbase/src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
+EOF
+
+# Commit and push
+git add -A
+git commit -m "ci: add proper Tauri build workflow for Linux and Windows"
+git push origin main
