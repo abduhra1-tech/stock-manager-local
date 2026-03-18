@@ -1,50 +1,58 @@
-# Navigate to your repository
-cd stock-manager-local
+# 1. Remove old workflow files
+rm -f .github/workflows/build-tauri.yml .github/workflows/build.yml
 
-# Update the workflow file with valid SHAs
-cat > .github/workflows/build.yml << 'YAML'
+# 2. Create clean workflow file with pinned SHAs
+mkdir -p .github/workflows
+cat > .github/workflows/build.yml << 'ENDOFFILE'
 name: Raseed Build
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
+    name: Build ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: ./stockbase
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
+
       - name: Setup Node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a  # v4.2.0
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7  # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-      
-      # Use rustup directly instead of dtolnay/rust-toolchain
-      - name: Install Rust
+
+      - name: Install Rust via rustup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          source "$HOME/.cargo/env"
+          if [ -f "$HOME/.cargo/env" ]; then
+            source "$HOME/.cargo/env"
+          fi
           rustc --version
           cargo --version
         shell: bash
-      
-      # Add Windows target if on Windows
-      - name: Add Windows target
+
+      - name: Add Windows target (if Windows)
         if: matrix.platform == 'windows-latest'
         run: rustup target add x86_64-pc-windows-msvc
         shell: bash
-      
-      - name: Install Dependencies (Ubuntu)
+
+      - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
@@ -53,16 +61,16 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
-      
-      - name: Install Dependencies & Build
-        working-directory: ./stockbase
-        run: |
-          npm ci || npm install
-          npx tauri build
-        shell: bash
-      
-      - name: Upload Artifacts
+            patchelf \
+            pkg-config
+
+      - name: Install npm dependencies
+        run: npm ci || npm install
+
+      - name: Build Tauri app
+        run: npx tauri build
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
         with:
           name: Raseed-${{ matrix.platform }}
@@ -70,9 +78,16 @@ jobs:
             stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
-YAML
+ENDOFFILE
 
-# Commit and push
-git add .github/workflows/build.yml
-git commit -m "ci: replace rust-toolchain action with rustup installation"
+# 3. Verify the file is clean
+echo "=== Checking for error messages ==="
+grep -i "error\|failure\|invalid" .github/workflows/build.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
+
+echo "=== First 15 lines of workflow ==="
+head -15 .github/workflows/build.yml
+
+# 4. Commit and push
+git add -A
+git commit -m "ci: create clean GitHub Actions workflow with pinned SHAs and rustup install"
 git push origin main
