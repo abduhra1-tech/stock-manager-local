@@ -1,3 +1,9 @@
+# 1. Remove old broken workflows
+rm -f .github/workflows/build-tauri.yml .github/workflows/build.yml
+
+# 2. Create clean workflow using heredoc (preserves formatting)
+mkdir -p .github/workflows
+cat > .github/workflows/build.yml << 'EOF'
 name: Raseed Build
 on:
   push:
@@ -19,37 +25,37 @@ jobs:
       run:
         working-directory: ./stockbase
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-
+      - uses: actions/checkout@v4
       - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
-
       - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
-        with:
-          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
-
+        uses: dtolnay/rust-toolchain@stable
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build Tauri app
-        run: npx tauri build  # ← Changed from npm run tauri build
-
+        run: npx tauri build
       - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        uses: actions/upload-artifact@v4
         with:
           name: Raseed-${{ matrix.platform }}
-          path: |
-            src-tauri/target/release/bundle/**/*
+          path: stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
+EOF
+
+# 3. Verify no trailing whitespace
+grep -n ' $' .github/workflows/build.yml && echo "⚠️ Found trailing spaces!" || echo "✅ Clean"
+
+# 4. Commit and push
+git add -A
+git commit -m "ci: fix workflow - use verified tags, remove whitespace"
+git push origin main
