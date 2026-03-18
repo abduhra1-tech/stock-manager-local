@@ -27,15 +27,17 @@ jobs:
         node-version: '20'
         cache: 'npm'
     
-    # Use actions-rs/toolchain instead (more reliable with SHAs)
+    # Install Rust using rustup (no external action)
     - name: Install Rust
-      uses: actions-rs/toolchain@b2417cde78dc8083c41752e6dd7ddead152b0860  # v1.0.7
-      with:
-        toolchain: stable
-        override: true
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        rustc --version
+        cargo --version
+      shell: bash
     
     # Install Linux dependencies
-    - name: Install dependencies (Ubuntu only)
+    - name: Install Linux dependencies
       if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get update
@@ -46,21 +48,11 @@ jobs:
           librsvg2-dev \
           patchelf
     
-    # Install Windows dependencies (if needed)
-    - name: Install dependencies (Windows only)
-      if: matrix.platform == 'windows-latest'
-      run: |
-        echo "Windows dependencies are handled by Rust"
-    
-    # Install macOS dependencies (if needed)
-    - name: Install dependencies (macOS only)
-      if: matrix.platform == 'macos-latest'
-      run: |
-        echo "macOS dependencies are handled by Rust"
-    
+    # Install frontend dependencies
     - name: Install frontend dependencies
       run: npm install
     
+    # Build Tauri app
     - name: Build Tauri app
       run: npm run tauri build
     
