@@ -1,9 +1,9 @@
-# 1. Remove old workflow
+# 1. Remove ALL old workflow files (including the broken one)
 rm -f .github/workflows/build-tauri.yml .github/workflows/build.yml
 
-# 2. Create new workflow with pinned SHAs
+# 2. Create clean workflow file
 mkdir -p .github/workflows
-cat > .github/workflows/build.yml << 'EOF'
+cat > .github/workflows/build.yml << 'ENDOFFILE'
 name: Raseed Build
 on:
   push:
@@ -54,12 +54,19 @@ jobs:
           path: stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
-EOF
+ENDOFFILE
 
-# 3. Verify no trailing whitespace
-grep -n '@.* $' .github/workflows/build.yml && echo "⚠️ Found trailing spaces!" || echo "✅ Clean"
+# 3. Verify the file is clean (no error messages, no trailing spaces)
+echo "=== Checking for trailing spaces ==="
+grep -n ' $' .github/workflows/build.yml && echo "⚠️ Found trailing spaces!" || echo "✅ No trailing spaces"
+
+echo "=== Checking for error messages ==="
+grep -i "error\|failure\|invalid" .github/workflows/build.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
+
+echo "=== First 10 lines of workflow ==="
+head -10 .github/workflows/build.yml
 
 # 4. Commit and push
 git add -A
-git commit -m "fix: pin GitHub Actions to commit SHAs for security policy"
+git commit -m "fix: create clean GitHub Actions workflow with pinned SHAs"
 git push origin main
