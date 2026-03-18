@@ -1,61 +1,58 @@
-name: Build Tauri App
-
+# 1. Replace your workflow file
+cat > .github/workflows/build.yml << 'EOF'
+name: Raseed Build
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
+    name: Build ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
-        # Remove macos-latest if you don't want macOS builds
-        platform: [ubuntu-22.04, windows-latest]
-        # platform: [ubuntu-22.04, windows-latest, macos-latest]  # Original with macOS
-    
+        platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
-
+    defaults:
+      run:
+        working-directory: ./stockbase
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a  # v4.2.0
-      with:
-        node-version: '20'
-    
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        rustc --version
-        cargo --version
-      shell: bash
-    
-    - name: Install Linux dependencies
-      if: matrix.platform == 'ubuntu-22.04'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libgtk-3-dev \
-          libwebkit2gtk-4.0-dev \
-          libappindicator3-dev \
-          librsvg2-dev \
-          patchelf
-    
-    - name: Install dependencies
-      run: npm install
-    
-    - name: Check available scripts
-      run: npm run
-    
-    - name: Build Tauri app
-      run: npx tauri build
-    
-    - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
-      with:
-        name: tauri-app-${{ matrix.platform }}
-        path: |
-          src-tauri/target/release/bundle/
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Tauri app
+        run: npx tauri build --verbose
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Raseed-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
+EOF
+
+# 2. Commit and push
+git add .github/workflows/build.yml
+git commit -m "fix(ci): add npm install step and fix working directory for Tauri build"
+git push origin main
