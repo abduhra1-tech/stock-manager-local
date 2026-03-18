@@ -23,7 +23,7 @@ jobs:
       uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a  # v4.2.0
       with:
         node-version: '20'
-        # Remove or comment out the cache line
+        # Remove cache if you don't have package-lock.json
         # cache: 'npm'
     
     - name: Install Rust
@@ -34,16 +34,21 @@ jobs:
         cargo --version
       shell: bash
     
-    - name: Install Linux dependencies
+    - name: Install Linux dependencies (Ubuntu 24.04)
       if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           libgtk-3-dev \
-          libwebkit2gtk-4.0-dev \
+          libwebkit2gtk-4.1-dev \
           libappindicator3-dev \
           librsvg2-dev \
           patchelf
+        # Also install these commonly needed dependencies
+        sudo apt-get install -y \
+          libjavascriptcoregtk-4.1-dev \
+          libsoup-3.0-dev \
+          libayatana-appindicator3-dev
     
     - name: Install frontend dependencies
       run: npm install
