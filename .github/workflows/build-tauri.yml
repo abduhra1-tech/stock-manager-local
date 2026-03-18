@@ -1,3 +1,8 @@
+# Navigate to your repository
+cd stock-manager-local
+
+# Update the workflow file with valid SHAs
+cat > .github/workflows/build.yml << 'YAML'
 name: Raseed Build
 
 on:
@@ -23,10 +28,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
       
+      # Use rustup directly instead of dtolnay/rust-toolchain
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a613336ec90b3  # stable
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+          rustc --version
+          cargo --version
+        shell: bash
+      
+      # Add Windows target if on Windows
+      - name: Add Windows target
+        if: matrix.platform == 'windows-latest'
+        run: rustup target add x86_64-pc-windows-msvc
+        shell: bash
       
       - name: Install Dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-latest'
@@ -44,6 +60,7 @@ jobs:
         run: |
           npm ci || npm install
           npx tauri build
+        shell: bash
       
       - name: Upload Artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
@@ -53,3 +70,9 @@ jobs:
             stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
+YAML
+
+# Commit and push
+git add .github/workflows/build.yml
+git commit -m "ci: replace rust-toolchain action with rustup installation"
+git push origin main
