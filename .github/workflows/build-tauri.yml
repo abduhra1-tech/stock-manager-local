@@ -1,13 +1,11 @@
-# 1. Check what workflow files exist
+# 1. Remove ALL broken workflow files
+rm -f .github/workflows/*.yml .github/workflows/*.yaml
+
+# 2. Verify directory is empty
 ls -la .github/workflows/
 
-# 2. Remove the broken build-tauri.yml file
-rm -f .github/workflows/build-tauri.yml
-
-# 3. Verify only main.yml remains
-ls -la .github/workflows/
-
-# 4. Commit and push
-git add -A
-git commit -m "fix: remove invalid build-tauri.yml workflow file"
-git push origin main
+# 3. Create clean workflow file using GitHub Web UI (MOST RELIABLE)
+# Go to: https://github.com/abduhra1-tech/stock-manager-local
+# Click Actions → New workflow → set up a workflow yourself
+# Name it: main.yml
+# Paste ONLY this content (NO error messages):
