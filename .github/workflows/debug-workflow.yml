@@ -1,9 +1,17 @@
-# 1. Edit the workflow file
-nano .github/workflows/main.yml  # or use your preferred editor
+# 1. Remove the broken debug-workflow.yml file
+rm -f .github/workflows/debug-workflow.yml
 
-# 2. Replace the rust-toolchain line with one of the options above
+# 2. Verify only main.yml remains
+ls -la .github/workflows/
 
-# 3. Commit and push
-git add .github/workflows/main.yml
-git commit -m "fix: update rust-toolchain action to valid reference"
+# 3. Edit main.yml to fix rust-toolchain reference
+# Replace the pinned SHA with a stable tag:
+# FROM (broken):
+#   uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
+# TO (fixed):
+#   uses: dtolnay/rust-toolchain@stable
+
+# 4. Commit and push
+git add -A
+git commit -m "fix: remove broken workflow + update rust-toolchain reference"
 git push origin main
