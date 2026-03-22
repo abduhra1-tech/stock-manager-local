@@ -1,5 +1,9 @@
-# 1. Update the workflow file with correct SHAs
-cat > .github/workflows/main.yml << 'EOF'
+# 1. Remove ALL broken workflow files first
+rm -f .github/workflows/debug-workflow.yml .github/workflows/build.yml .github/workflows/main.yml
+
+# 2. Create clean workflow file with ONLY valid YAML
+mkdir -p .github/workflows
+cat > .github/workflows/main.yml << 'ENDOFFILE'
 name: Raseed Build
 on:
   push:
@@ -23,17 +27,17 @@ jobs:
       run:
         working-directory: ./stockbase
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a  # v4.2.0
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e  # stable
+        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
@@ -50,19 +54,26 @@ jobs:
         run: npm run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: Raseed-${{ matrix.platform }}
           path: |
             src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
-EOF
+ENDOFFILE
 
-# 2. Verify no trailing whitespace
-grep -n '@.* $' .github/workflows/main.yml && echo "⚠️ Found trailing spaces!" || echo "✅ Clean"
+# 3. Verify the file is clean (no error text, no trailing spaces)
+echo "=== Checking for error messages ==="
+grep -i "check failure\|invalid workflow\|error" .github/workflows/main.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
 
-# 3. Commit and push
+echo "=== Checking for trailing spaces ==="
+grep -n ' $' .github/workflows/main.yml && echo "⚠️ Found trailing spaces!" || echo "✅ No trailing spaces"
+
+echo "=== First 10 lines of workflow ==="
+head -10 .github/workflows/main.yml
+
+# 4. Commit and push
 git add -A
-git commit -m "fix: pin all GitHub Actions to verified commit SHAs"
+git commit -m "fix: create clean GitHub Actions workflow with pinned SHAs"
 git push origin main
