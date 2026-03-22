@@ -1,3 +1,5 @@
+# 1. Update the workflow file
+cat > .github/workflows/main.yml << 'EOF'
 name: Raseed Build
 on:
   push:
@@ -21,17 +23,17 @@ jobs:
       run:
         working-directory: ./stockbase
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node
-        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
@@ -55,3 +57,9 @@ jobs:
             src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
+EOF
+
+# 2. Commit and push
+git add -A
+git commit -m "fix: pin all GitHub Actions to commit SHAs"
+git push origin main
