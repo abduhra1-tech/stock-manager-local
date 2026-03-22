@@ -1,3 +1,5 @@
+# 1. Update your workflow file
+cat > .github/workflows/main.yml << 'EOF'
 name: Raseed Build
 on:
   push:
@@ -31,7 +33,7 @@ jobs:
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9
+        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
@@ -55,3 +57,13 @@ jobs:
             src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
+EOF
+
+# 2. Verify SHAs are 40 characters
+grep -o '@[a-f0-9]\{40\}' .github/workflows/main.yml | wc -l
+# Should output: 4 (all 4 actions have valid 40-char SHAs)
+
+# 3. Commit and push
+git add -A
+git commit -m "fix: pin all GitHub Actions to verified 40-character commit SHAs"
+git push origin main
