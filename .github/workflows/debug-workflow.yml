@@ -1,9 +1,9 @@
-# 1. Remove ALL old/broken workflow files
-rm -f .github/workflows/debug-workflow.yml .github/workflows/build.yml .github/workflows/main.yml
+# 1. Remove ALL old workflow files
+rm -f .github/workflows/*.yml .github/workflows/*.yaml
 
-# 2. Create clean workflow file (NO error messages in the content!)
+# 2. Create clean workflow file
 mkdir -p .github/workflows
-cat > .github/workflows/main.yml << 'ENDOFFILE'
+cat > .github/workflows/main.yml << 'EOF'
 name: Raseed Build
 on:
   push:
@@ -61,17 +61,11 @@ jobs:
             src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
-ENDOFFILE
+EOF
 
-# 3. Verify the file is clean (no error messages, no trailing spaces)
-echo "=== Checking for error text ==="
-grep -i "check failure\|invalid workflow\|error" .github/workflows/main.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
-
-echo "=== Checking for trailing spaces ==="
-grep -n ' $' .github/workflows/main.yml && echo "⚠️ Found trailing spaces!" || echo "✅ No trailing spaces"
-
-echo "=== First 10 lines of workflow ==="
-head -10 .github/workflows/main.yml
+# 3. Verify the file is clean
+echo "=== First 15 lines ==="
+head -15 .github/workflows/main.yml
 
 # 4. Commit and push
 git add -A
