@@ -6,7 +6,6 @@ rm -f .github/workflows/build-tauri.yml
 
 # 3. Verify only main.yml remains
 ls -la .github/workflows/
-# Should show only: main.yml
 
 # 4. Commit and push
 git add -A
