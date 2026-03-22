@@ -1,11 +1,10 @@
-# .github/workflows/main.yml
 name: Raseed Build
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # ← Enables manual trigger
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -22,23 +21,25 @@ jobs:
       run:
         working-directory: ./stockbase
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.2.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7  # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: stockbase/package-lock.json
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@58482e6d3eaeef58d6e3f5bd69b31b0085bf2f9  # stable
+        with:
+          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
       - name: Install dependencies
         run: npm ci
@@ -47,9 +48,10 @@ jobs:
         run: npm run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
         with:
           name: Raseed-${{ matrix.platform }}
-          path: stockbase/src-tauri/target/release/bundle/**/*
+          path: |
+            src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
