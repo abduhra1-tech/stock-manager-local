@@ -1,7 +1,7 @@
-# 1. Remove ALL old workflow files
+# 1. Remove ALL broken workflow files first
 rm -f .github/workflows/*.yml .github/workflows/*.yaml
 
-# 2. Create clean workflow file
+# 2. Create clean workflow file with ONLY valid YAML
 mkdir -p .github/workflows
 cat > .github/workflows/main.yml << 'ENDOFFILE'
 name: Raseed Build
@@ -63,11 +63,14 @@ jobs:
           if-no-files-found: warn
 ENDOFFILE
 
-# 3. Verify the file is clean
+# 3. Verify the file is clean (no error text, no trailing spaces)
 echo "=== Checking for error messages ==="
-grep -i "check failure\|invalid workflow\|error\|GitHub Actions" .github/workflows/main.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
+grep -i "check failure\|invalid workflow\|error" .github/workflows/main.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
 
-echo "=== First 10 lines ==="
+echo "=== Checking for trailing spaces ==="
+grep -n ' $' .github/workflows/main.yml && echo "⚠️ Found trailing spaces!" || echo "✅ No trailing spaces"
+
+echo "=== First 10 lines of workflow ==="
 head -10 .github/workflows/main.yml
 
 # 4. Commit and push
