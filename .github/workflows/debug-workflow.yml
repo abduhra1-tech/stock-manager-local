@@ -1,17 +1,57 @@
-# 1. Remove the broken debug-workflow.yml file
-rm -f .github/workflows/debug-workflow.yml
+name: Raseed Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
-# 2. Verify only main.yml remains
-ls -la .github/workflows/
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# 3. Edit main.yml to fix rust-toolchain reference
-# Replace the pinned SHA with a stable tag:
-# FROM (broken):
-#   uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
-# TO (fixed):
-#   uses: dtolnay/rust-toolchain@stable
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: ./stockbase
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
-# 4. Commit and push
-git add -A
-git commit -m "fix: remove broken workflow + update rust-toolchain reference"
-git push origin main
+      - name: Setup Node
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: stockbase/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: Raseed-${{ matrix.platform }}
+          path: |
+            src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
