@@ -1,15 +1,15 @@
-# 1. Remove old workflow files
-rm -f .github/workflows/debug-workflow.yml .github/workflows/build.yml
+# 1. Remove ALL old workflow files
+rm -f .github/workflows/*.yml .github/workflows/*.yaml
 
-# 2. Create clean workflow file with pinned SHAs
+# 2. Create clean workflow file
 mkdir -p .github/workflows
 cat > .github/workflows/build.yml << 'ENDOFFILE'
 name: Raseed Build
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -45,14 +45,7 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            pkg-config \
-            libssl-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
       - name: Install npm dependencies
         run: npm ci
@@ -64,18 +57,17 @@ jobs:
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: Raseed-${{ matrix.platform }}
-          path: |
-            stockbase/src-tauri/target/release/bundle/**/*
+          path: stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
 ENDOFFILE
 
-# 3. Verify the file is clean
+# 3. Verify the file is clean (no error text)
 echo "=== Checking for error messages ==="
-grep -i "error\|failure\|invalid" .github/workflows/build.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
+grep -i "error\|failure\|invalid\|Check failure" .github/workflows/build.yml && echo "⚠️ Found error text!" || echo "✅ No error text"
 
-echo "=== First 15 lines of workflow ==="
-head -15 .github/workflows/build.yml
+echo "=== First 10 lines of workflow ==="
+head -10 .github/workflows/build.yml
 
 # 4. Commit and push
 git add -A
