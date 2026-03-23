@@ -31,7 +31,13 @@ jobs:
           cache-dependency-path: stockbase/bun.lock
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
+        uses:# BEFORE (broken - has trailing spaces):
+- name: Install Rust
+  uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e  
+
+# AFTER (fixed - no trailing spaces):
+- name: Install Rust
+  uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588ee
         with:
           target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
