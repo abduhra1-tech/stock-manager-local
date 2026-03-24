@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-      # ✅ Install Node manually
+      # Install Node (no action)
       - name: Setup Node (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -36,11 +36,11 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install nodejs-lts -y
 
-      # ✅ Install Bun
+      # Install Bun
       - name: Install Bun
         run: npm install -g bun
 
-      # ✅ Install Rust manually
+      # Install Rust (no action)
       - name: Install Rust (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -49,10 +49,9 @@ jobs:
 
       - name: Install Rust (Windows)
         if: matrix.platform == 'windows-latest'
-        run: |
-          choco install rust -y
+        run: choco install rust -y
 
-      # ✅ Linux deps for Tauri
+      # Linux dependencies for Tauri
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -71,10 +70,3 @@ jobs:
 
       - name: Build Tauri app
         run: bun run tauri build
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@8c5c8b3f2c8f1b5f0a7e9d4c2a6b3c4d5e6f7a8b
-        with:
-          name: stock-manager-${{ matrix.platform }}
-          path: stockbase/src-tauri/target/release/bundle/**/*
-          retention-days: 7
