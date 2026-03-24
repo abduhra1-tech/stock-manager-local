@@ -21,10 +21,15 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
+      # ------------------------
+      # Checkout
+      # ------------------------
       - name: Checkout repository
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-      # Node
+      # ------------------------
+      # Node setup
+      # ------------------------
       - name: Setup Node (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -35,11 +40,15 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install nodejs-lts -y
 
+      # ------------------------
       # Bun
+      # ------------------------
       - name: Install Bun
         run: npm install -g bun
 
+      # ------------------------
       # Rust
+      # ------------------------
       - name: Install Rust (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -50,7 +59,9 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install rust -y
 
-      # Linux deps
+      # ------------------------
+      # Linux dependencies
+      # ------------------------
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -64,18 +75,36 @@ jobs:
             pkg-config \
             libssl-dev
 
-      # Install deps INSIDE stockbase
+      # ------------------------
+      # Project dependencies
+      # ------------------------
       - name: Install dependencies
         run: |
           cd stockbase
           bun install
 
+      # ------------------------
       # Install Tauri CLI
+      # ------------------------
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
-      # 🔥 CRITICAL FIX HERE
+      # ------------------------
+      # Build
+      # ------------------------
       - name: Build Tauri app
         run: |
           cd stockbase
           cargo tauri build
+
+      # ------------------------
+      # Upload artifacts
+      # ------------------------
+      - name: Upload artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: stock-manager-${{ matrix.platform }}
+          path: |
+            stockbase/src-tauri/target/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: warn
