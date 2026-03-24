@@ -7,9 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     name: Build ${{ matrix.platform }}
@@ -26,21 +23,36 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-      - name: Setup Node
-        uses: actions/setup-node@8f4b7f848c1a5f4e7d6c7bfb6c53a64a1c9e0c2b
-        with:
-          node-version: 20
+      # ✅ Install Node manually
+      - name: Setup Node (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
 
+      - name: Setup Node (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: choco install nodejs-lts -y
+
+      # ✅ Install Bun
       - name: Install Bun
         run: npm install -g bun
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@a1c6e3c6b1d9a1c6b1e6d4c5f1a2b3c4d5e6f7a8
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+      # ✅ Install Rust manually
+      - name: Install Rust (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Install Rust (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          choco install rust -y
+
+      # ✅ Linux deps for Tauri
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -61,7 +73,7 @@ jobs:
         run: bun run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a8b4e4e6c2d1c2c4c6a7e8f9
+        uses: actions/upload-artifact@8c5c8b3f2c8f1b5f0a7e9d4c2a6b3c4d5e6f7a8b
         with:
           name: stock-manager-${{ matrix.platform }}
           path: stockbase/src-tauri/target/release/bundle/**/*
