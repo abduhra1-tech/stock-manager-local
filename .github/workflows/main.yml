@@ -20,17 +20,11 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
 
-    defaults:
-      run:
-        working-directory: ./stockbase
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-      # ------------------------
-      # Node installation
-      # ------------------------
+      # Node
       - name: Setup Node (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -41,15 +35,11 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install nodejs-lts -y
 
-      # ------------------------
       # Bun
-      # ------------------------
       - name: Install Bun
         run: npm install -g bun
 
-      # ------------------------
       # Rust
-      # ------------------------
       - name: Install Rust (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -60,9 +50,7 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install rust -y
 
-      # ------------------------
-      # Linux dependencies for Tauri
-      # ------------------------
+      # Linux deps
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -76,20 +64,18 @@ jobs:
             pkg-config \
             libssl-dev
 
-      # ------------------------
-      # Project dependencies
-      # ------------------------
+      # Install deps INSIDE stockbase
       - name: Install dependencies
-        run: bun install
+        run: |
+          cd stockbase
+          bun install
 
-      # ------------------------
-      # Tauri CLI (FIXED)
-      # ------------------------
+      # Install Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
-      # ------------------------
-      # Build (FIXED)
-      # ------------------------
+      # 🔥 CRITICAL FIX HERE
       - name: Build Tauri app
-        run: cargo tauri build
+        run: |
+          cd stockbase
+          cargo tauri build
