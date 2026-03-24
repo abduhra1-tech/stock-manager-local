@@ -1,4 +1,5 @@
 name: Raseed Build
+
 on:
   push:
     branches: [main]
@@ -25,17 +26,26 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@1a6262110e51671280af29be65568afa0747e3a7
+        with:
+          bun-version: latest
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@e4b6e021b705a28c20b15e25b5a1db7a1311588e
+        uses: dtolnay/rust-toolchain@stable
         with:
-          target: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libssl-dev
 
       - name: Install dependencies
         run: bun install
@@ -48,6 +58,6 @@ jobs:
         with:
           name: stock-manager-${{ matrix.platform }}
           path: |
-            src-tauri/target/release/bundle/**/*
+            stockbase/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
