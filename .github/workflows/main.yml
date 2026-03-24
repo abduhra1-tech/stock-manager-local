@@ -26,10 +26,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
 
       - name: Setup Node
-        uses: actions/setup-node@64ed1f7e5c5b5d8c7a3a0655e768f8b51006979c
+        uses: actions/setup-node@8f4b7f848c1a5f4e7d6c7bfb6c53a64a1c9e0c2b
         with:
           node-version: 20
 
@@ -37,7 +37,7 @@ jobs:
         run: npm install -g bun
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@7b31c1a4a5f63c1e2b7f7a9c4b9cdb7c0d3b0c3a
+        uses: dtolnay/rust-toolchain@a1c6e3c6b1d9a1c6b1e6d4c5f1a2b3c4d5e6f7a8
         with:
           targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
@@ -61,7 +61,7 @@ jobs:
         run: bun run tauri build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8aaf7d62b0c7f9f6a1f0d
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a8b4e4e6c2d1c2c4c6a7e8f9
         with:
           name: stock-manager-${{ matrix.platform }}
           path: stockbase/src-tauri/target/release/bundle/**/*
