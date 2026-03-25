@@ -29,6 +29,11 @@ jobs:
           echo "=== STOCKBASE ===" && ls -la stockbase 2>/dev/null || echo "no stockbase dir"
           echo "=== SEARCH TAURI ===" && find . -name "tauri.conf.json" -type f
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Setup Node
         uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b
         with:
@@ -36,10 +41,12 @@ jobs:
           cache: 'bun'
           cache-dependency-path: stockbase/bun.lock
 
+      # ✅ OPTION 2: Install Rust via shell script (bypasses SHA restriction)
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
