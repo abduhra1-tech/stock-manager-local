@@ -17,20 +17,38 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
-    defaults:
-      run:
-        working-directory: ./stockbase
+    
     steps:
-      # ✅ Only official GitHub actions (pinned SHAs that work)
+      # ✅ Checkout code to runner root
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
-      - name: Debug project structure
+      # 🔍 DEBUG: Find where the Tauri project actually is (platform-specific)
+      - name: Find Tauri project (Linux)
+        if: matrix.platform == 'ubuntu-latest'
         run: |
-          echo "=== ROOT ===" && ls -la 2>/dev/null || dir
-          echo "=== STOCKBASE ===" && ls -la stockbase 2>/dev/null || dir stockbase
-          echo "=== SEARCH TAURI ===" && find . -name "tauri.conf.json" -type f 2>/dev/null || echo "not found"
+          echo "=== Files at root ===" && ls -la
+          echo "=== Searching for tauri.conf.json ===" 
+          TAURI_PATH=$(find . -name "tauri.conf.json" -type f | head -1)
+          echo "Found: $TAURI_PATH"
+          if [ -n "$TAURI_PATH" ]; then
+            PROJECT_DIR=$(dirname "$TAURI_PATH")
+            echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          fi
 
-      # ✅ Install Node.js manually (NO setup-node action)
+      - name: Find Tauri project (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          Write-Host "=== Files at root ==="; Get-ChildItem -Force
+          Write-Host "=== Searching for tauri.conf.json ==="
+          $tauriPath = Get-ChildItem -Recurse -Filter "tauri.conf.json" | Select-Object -First 1 -ExpandProperty FullName
+          Write-Host "Found: $tauriPath"
+          if ($tauriPath) {
+            $projectDir = Split-Path $tauriPath -Parent
+            echo "PROJECT_DIR=$projectDir" >> $env:GITHUB_ENV
+          }
+
+      # ✅ Install Node.js manually
       - name: Install Node.js (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -44,7 +62,7 @@ jobs:
           choco install nodejs-lts --no-progress -y
           echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
 
-      # ✅ Install Bun manually (NO setup-bun action)
+      # ✅ Install Bun manually
       - name: Install Bun (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -58,7 +76,7 @@ jobs:
           powershell -c "irm bun.sh/install.ps1 | iex"
           echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
 
-      # ✅ Install Rust manually (NO rust-toolchain action)
+      # ✅ Install Rust manually
       - name: Install Rust
         shell: bash
         run: |
@@ -66,7 +84,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
-      # ✅ Windows: Export PATH for PowerShell steps
+      # ✅ Windows PATH setup
       - name: Setup Windows PATH
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -75,26 +93,31 @@ jobs:
           echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
           echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
 
-      # ✅ Linux system dependencies for Tauri
+      # ✅ Linux system dependencies
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
-      # ✅ Install JS dependencies & build
+      # ✅ Install dependencies in detected project dir
       - name: Install dependencies
-        run: bun install
+        run: |
+          cd "${{ env.PROJECT_DIR || '.' }}"
+          bun install
 
+      # ✅ Build Tauri app in detected project dir
       - name: Build Tauri app
-        run: bunx tauri build
+        run: |
+          cd "${{ env.PROJECT_DIR || '.' }}"
+          bunx tauri build
 
-      # ✅ Upload artifacts (only official GitHub action)
+      # ✅ Upload artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: stock-manager-${{ matrix.platform }}
           path: |
-            src-tauri/target/release/bundle/**/*
+            **/src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
