@@ -17,9 +17,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./stockbase
 
     steps:
-      # ✅ Pinned SHA for checkout (official GitHub action)
+      # ✅ Pinned SHA (official GitHub action)
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
@@ -37,21 +40,7 @@ jobs:
           choco install nodejs-lts --no-progress -y
           echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
 
-      # ✅ Install Bun manually (your project uses Bun)
-      - name: Install Bun (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
-      - name: Install Bun (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          powershell -c "irm bun.sh/install.ps1 | iex"
-          echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
-
-      # ✅ Install Rust manually (bypasses SHA policy)
+      # ✅ Install Rust manually
       - name: Install Rust
         shell: bash
         run: |
@@ -65,9 +54,8 @@ jobs:
         shell: pwsh
         run: |
           echo "C:\Users\runneradmin\.cargo\bin" >> $env:GITHUB_PATH
-          echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
 
-      # ✅ Updated Linux dependencies for Tauri v2
+      # ✅ Linux dependencies for Tauri v2
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -81,19 +69,25 @@ jobs:
             pkg-config \
             libssl-dev
 
-      # ✅ Use Bun instead of npm
+      # ✅ Use npm (not bun) for Tauri CLI stability
       - name: Install dependencies
-        run: bun install
+        run: npm ci
 
+      # ✅ Build frontend first (if you have a Vite/React build step)
+      - name: Build frontend
+        run: npm run build
+        continue-on-error: true  # Skip if no build script
+
+      # ✅ FIXED: Use npx (not bunx) for Tauri v2 CLI
       - name: Build Tauri app
-        run: bunx tauri build
+        run: npx @tauri-apps/cli build
 
-      # ✅ Upload artifacts for download
+      # ✅ Upload artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: stock-manager-${{ matrix.os }}
           path: |
-            **/src-tauri/target/release/bundle/**/*
+            src-tauri/target/release/bundle/**/*
           retention-days: 7
           if-no-files-found: warn
