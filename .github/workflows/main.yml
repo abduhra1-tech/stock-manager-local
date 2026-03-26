@@ -22,11 +22,8 @@ jobs:
         working-directory: ./stockbase
 
     steps:
-      # ✅ Pinned SHA (official GitHub action)
-      - name: Checkout repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
-      # ✅ Install Node.js manually (bypasses SHA policy)
       - name: Install Node.js (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -40,7 +37,6 @@ jobs:
           choco install nodejs-lts --no-progress -y
           echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
 
-      # ✅ Install Rust manually
       - name: Install Rust
         shell: bash
         run: |
@@ -48,41 +44,29 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           rustup target add ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
 
-      # ✅ Windows PATH setup
       - name: Setup Windows PATH
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: |
-          echo "C:\Users\runneradmin\.cargo\bin" >> $env:GITHUB_PATH
+        run: echo "C:\Users\runneradmin\.cargo\bin" >> $env:GITHUB_PATH
 
-      # ✅ Linux dependencies for Tauri v2
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            pkg-config \
-            libssl-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
-      # ✅ Use npm (not bun) for Tauri CLI stability
+      # ✅ STABLE: npm for CI
       - name: Install dependencies
         run: npm ci
 
-      # ✅ Build frontend first (if you have a Vite/React build step)
       - name: Build frontend
         run: npm run build
-        continue-on-error: true  # Skip if no build script
+        continue-on-error: true
 
-      # ✅ FIXED: Use npx (not bunx) for Tauri v2 CLI
+      # ✅ STABLE: npx for Tauri v2 CLI
       - name: Build Tauri app
         run: npx @tauri-apps/cli build
 
-      # ✅ Upload artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
