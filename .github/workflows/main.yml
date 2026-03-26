@@ -1,3 +1,14 @@
+name: Raseed Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build ${{ matrix.platform }}
@@ -10,13 +21,46 @@ jobs:
       run:
         working-directory: ./stockbase
     steps:
-      # ... previous steps ...
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+
+      - name: Debug project structure
+        run: |
+          echo "=== ROOT ===" && ls -la 2>/dev/null || dir
+          echo "=== STOCKBASE ===" && ls -la stockbase 2>/dev/null || dir stockbase
+          echo "=== SEARCH TAURI ===" && find . -name "tauri.conf.json" -type f 2>/dev/null || echo "not found"
+
+      - name: Install Bun
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            winget install --id Oven.Bun -e --source winget
+            echo "$LOCALAPPDATA\\bun" >> $GITHUB_PATH
+          else
+            curl -fsSL https://bun.sh/install | bash
+            echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@395ad326223194a2c8ee232e96f6f972bae410e7
+        with:
+          node-version: 20
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
       - name: Install dependencies
         run: bun install
 
       - name: Build Tauri app
-        run: bunx tauri build  # ← Use bunx instead of bun run
+        run: bunx tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
