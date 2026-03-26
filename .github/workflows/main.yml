@@ -1,123 +1,42 @@
 name: Raseed Build
+
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    name: Build ${{ matrix.platform }}
     strategy:
-      fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
-    
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      # ✅ Checkout code to runner root
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 🔍 DEBUG: Find where the Tauri project actually is (platform-specific)
-      - name: Find Tauri project (Linux)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          echo "=== Files at root ===" && ls -la
-          echo "=== Searching for tauri.conf.json ===" 
-          TAURI_PATH=$(find . -name "tauri.conf.json" -type f | head -1)
-          echo "Found: $TAURI_PATH"
-          if [ -n "$TAURI_PATH" ]; then
-            PROJECT_DIR=$(dirname "$TAURI_PATH")
-            echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          fi
-
-      - name: Find Tauri project (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          Write-Host "=== Files at root ==="; Get-ChildItem -Force
-          Write-Host "=== Searching for tauri.conf.json ==="
-          $tauriPath = Get-ChildItem -Recurse -Filter "tauri.conf.json" | Select-Object -First 1 -ExpandProperty FullName
-          Write-Host "Found: $tauriPath"
-          if ($tauriPath) {
-            $projectDir = Split-Path $tauriPath -Parent
-            echo "PROJECT_DIR=$projectDir" >> $env:GITHUB_ENV
-          }
-
-      # ✅ Install Node.js manually
-      - name: Install Node.js (Linux)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-
-      - name: Install Node.js (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          choco install nodejs-lts --no-progress -y
-          echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
-
-      # ✅ Install Bun manually
-      - name: Install Bun (Linux)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
-      - name: Install Bun (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          powershell -c "irm bun.sh/install.ps1 | iex"
-          echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
-
-      # ✅ Install Rust manually
-      - name: Install Rust
-        shell: bash
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          rustup target add ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'x86_64-unknown-linux-gnu' }}
-
-      # ✅ Windows PATH setup
-      - name: Setup Windows PATH
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          echo "C:\Users\runneradmin\.cargo\bin" >> $env:GITHUB_PATH
-          echo "C:\Users\runneradmin\.bun\bin" >> $env:GITHUB_PATH
-          echo "C:\Program Files\nodejs" >> $env:GITHUB_PATH
-
-      # ✅ Linux system dependencies
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
-
-      # ✅ Install dependencies in detected project dir
-      - name: Install dependencies
-        run: |
-          cd "${{ env.PROJECT_DIR || '.' }}"
-          bun install
-
-      # ✅ Build Tauri app in detected project dir
-      - name: Build Tauri app
-        run: |
-          cd "${{ env.PROJECT_DIR || '.' }}"
-          bunx tauri build
-
-      # ✅ Upload artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: stock-manager-${{ matrix.platform }}
-          path: |
-            **/src-tauri/target/release/bundle/**/*
-          retention-days: 7
-          if-no-files-found: warn
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ✅ Fix for Ubuntu (Tauri needs this)
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libwebkit2gtk-4.0-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Build app
+        run: npm run build
+
+      - name: Build Tauri app
+        run: npm run tauri build
