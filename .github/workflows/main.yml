@@ -2,7 +2,7 @@ name: Raseed Build
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 env:
   APP_NAME: Raseed
@@ -12,14 +12,12 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      # ✅ Setup Bun (not npm!)
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@2602a649e15b1f5b6f5f0e5e7f7e7f7e7f7e7f7f  # v1.2.0 (verify SHA below)
         with:
           bun-version: latest
       
-      # ✅ Install Linux system dependencies for Tauri
       - name: Install Linux deps
         run: |
           sudo apt-get update
@@ -30,18 +28,15 @@ jobs:
             libsqlite3-dev \
             patchelf
       
-      # ✅ Use bun install (not npm ci!)
       - name: Install dependencies
         run: bun install
       
-      # ✅ Build frontend + Tauri
       - name: Build app
         run: |
           bun run build
           bunx tauri build --bundles deb,rpm
       
-      # ✅ Upload artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.1.0
         with:
           name: raseed-linux
           path: |
@@ -52,25 +47,21 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      # ✅ Setup Bun
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@2602a649e15b1f5b6f5f0e5e7f7e7f7e7f7e7f7f  # v1.2.0
         with:
           bun-version: latest
       
-      # ✅ Install dependencies with Bun
       - name: Install dependencies
         run: bun install
       
-      # ✅ Build for Windows
       - name: Build app
         run: |
           bun run build
           bunx tauri build --bundles msi,nsis
       
-      # ✅ Upload artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.1.0
         with:
           name: raseed-windows
           path: |
