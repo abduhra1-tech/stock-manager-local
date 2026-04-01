@@ -15,10 +15,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.0
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@735343b6c782352e4b8a618342ac15bcbb85fcb2  # v2.0.0
+        uses: oven-sh/setup-bun@f4d14e3da449d08b0a0612c53666a6ab429a1651  # v2.0.0
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@37ccb0e5bc2473f4ea4d6e2b7b11b97d1a8e3f2e  # stable
+        uses: dtolnay/rust-toolchain@148bb5c871ad7f6cf78e1d43a2b1aaf8bdb022be  # stable
 
       - name: Install Linux dependencies
         run: |
@@ -53,10 +53,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.0
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@735343b6c782352e4b8a618342ac15bcbb85fcb2  # v2.0.0
+        uses: oven-sh/setup-bun@f4d14e3da449d08b0a0612c53666a6ab429a1651  # v2.0.0
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@37ccb0e5bc2473f4ea4d6e2b7b11b97d1a8e3f2e  # stable
+        uses: dtolnay/rust-toolchain@148bb5c871ad7f6cf78e1d43a2b1aaf8bdb022be  # stable
         with:
           targets: x86_64-pc-windows-msvc
 
