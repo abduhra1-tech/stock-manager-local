@@ -3,8 +3,6 @@ name: Build Raseed
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -12,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.0
+        uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@f4d14e3da449d08b0a0612c53666a6ab429a1651  # v2.0.0
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@148bb5c871ad7f6cf78e1d43a2b1aaf8bdb022be  # stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux dependencies
         run: |
@@ -38,7 +36,7 @@ jobs:
         run: bun run tauri build
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
+        uses: actions/upload-artifact@v4
         with:
           name: raseed-linux
           path: |
@@ -50,13 +48,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.0
+        uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@f4d14e3da449d08b0a0612c53666a6ab429a1651  # v2.0.0
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@148bb5c871ad7f6cf78e1d43a2b1aaf8bdb022be  # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
@@ -67,7 +65,7 @@ jobs:
         run: bun run tauri build
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
+        uses: actions/upload-artifact@v4
         with:
           name: raseed-windows
           path: |
