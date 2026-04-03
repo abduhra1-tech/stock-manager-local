@@ -7,7 +7,7 @@ on:
 
 env:
   CI: true
-  RUST_BACKTRACE: full
+  GITHUB_ACTIONS: true
 
 jobs:
   build-linux:
@@ -17,10 +17,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: oven-sh/setup-bun@v2
       
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libssl-dev
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libssl-dev
       
       - run: bun install
       - run: bun run build
